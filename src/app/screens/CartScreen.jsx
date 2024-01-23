@@ -1,18 +1,37 @@
-import React, { useState,useEffect,useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image ,Button,TouchableHighlight} from 'react-native';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
-import MapView, { Marker } from 'react-native-maps';
+import React, {useState, useEffect, useCallback} from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Button,
+  TouchableHighlight,
+} from 'react-native';
+import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
+import MapView, {Marker} from 'react-native-maps';
 import Icon from 'react-native-vector-icons/FontAwesome'; // You can choose any icon library you prefer
-import { store } from '../redux/store';
-import { makeApiRequest } from '../services/api';
-import { useFocusEffect } from '@react-navigation/native';
+import {store} from '../redux/store';
+import {makeApiRequest} from '../services/api';
+import {useFocusEffect} from '@react-navigation/native';
 import RazorpayCheckout from 'react-native-razorpay';
 
 const CartScreen = ({navigation}) => {
-  const state=store.getState()
+  const state = store.getState();
   const [cartData, setCartData] = useState([
-    { id: 'ab519a0d-8fa4-4f3f-aff4-a0b782dbbef6', name: 'Potato', price: 25, quantity: 1 },
-    { id: 'aba9e883-5b56-4916-91de-2f8d2f30013a', name: 'Tomato', price: 48, quantity: 2 },
+    {
+      id: 'ab519a0d-8fa4-4f3f-aff4-a0b782dbbef6',
+      name: 'Potato',
+      price: 25,
+      quantity: 1,
+    },
+    {
+      id: 'aba9e883-5b56-4916-91de-2f8d2f30013a',
+      name: 'Tomato',
+      price: 48,
+      quantity: 2,
+    },
     // Add more items as needed
   ]);
   useFocusEffect(
@@ -28,34 +47,38 @@ const CartScreen = ({navigation}) => {
             'consumer/getUserProfile',
             'POST',
             completeObject,
-            state?.userData?.userData
+            state?.userData?.userData,
           );
-
-          console.log(response.apiResponseData.cart);
-          let inputData = response.apiResponseData.cart;
-          const simplifiedList = Object.keys(inputData).map((key) => ({
+          console.log(response);
+          let inputData = response?.payload?.cart;
+          const simplifiedList = Object.keys(inputData).map(key => ({
             ...inputData[key],
             id: inputData[key].productId,
-            name: inputData[key].name.charAt(0).toUpperCase() + inputData[key].name.slice(1),
+            name:
+              inputData[key].name.charAt(0).toUpperCase() +
+              inputData[key].name.slice(1),
             price: parseFloat(inputData[key].price),
             quantity: inputData[key].quantity,
           }));
           setCartData(simplifiedList);
-          console.log(simplifiedList);
+          console.log(simplifiedList[0].images[0]);
         } catch (error) {
           console.error('Error fetching data:', error);
         }
       };
 
       fetchData(); // Call the fetchData function when the screen is focused
-    }, [state?.userData?.userData])
+    }, [state?.userData?.userData]),
   );
 
   const [address, setAddress] = useState('');
   const [selectedAddress, setSelectedAddress] = useState(null);
 
   const calculateTotal = () => {
-    return cartData.reduce((total, item) => total + item.price * item.quantity, 0);
+    return cartData?.reduce(
+      (total, item) => total + item.pricePerUnit* item.quantity,
+      0,
+    );
   };
   const fetchData = async () => {
     const mobileNumber = '9477245638';
@@ -68,15 +91,17 @@ const CartScreen = ({navigation}) => {
         'consumer/getUserProfile',
         'POST',
         completeObject,
-        state?.userData?.userData
+        state?.userData?.userData,
       );
 
-      console.log(response.apiResponseData.cart);
-      let inputData = response.apiResponseData.cart;
-      const simplifiedList = Object.keys(inputData).map((key) => ({
+      console.log(response);
+      let inputData = response?.payload?.cart;
+      const simplifiedList = Object.keys(inputData).map(key => ({
         ...inputData[key],
         id: inputData[key].productId,
-        name: inputData[key].name.charAt(0).toUpperCase() + inputData[key].name.slice(1),
+        name:
+          inputData[key].name.charAt(0).toUpperCase() +
+          inputData[key].name.slice(1),
         price: parseFloat(inputData[key].price),
         quantity: inputData[key].quantity,
       }));
@@ -86,82 +111,92 @@ const CartScreen = ({navigation}) => {
       console.error('Error fetching data:', error);
     }
   };
-  const increaseQuantity = (itemId) => {
-    let Body={
-      changeType:'increase',
-      itemId:itemId
-    }
+  const increaseQuantity = itemId => {
+    let Body = {
+      changeType: 'increase',
+      itemId: itemId,
+    };
     makeApiRequest(
       'consumer/changeCartItemQuantity',
       'POST',
       Body,
       state?.userData?.userData,
     ).then(response => {
-      console.log(response.apiResponseData);
- fetchData()
-  
+      console.log(response);
+      fetchData();
     });
-    setCartData((prevCartData) =>
-      prevCartData.map((item) =>
-        item.productId === itemId ? { ...item, quantity: item.quantity + 1 } : item
-      )
+    setCartData(prevCartData =>
+      prevCartData.map(item =>
+        item.productId === itemId
+          ? {...item, quantity: item.quantity + 1}
+          : item,
+      ),
     );
   };
 
-  const decreaseQuantity = (itemId) => {
-    let Body={
-      changeType:'decrease',
-      itemId:itemId
-    }
+  const decreaseQuantity = itemId => {
+    let Body = {
+      changeType: 'decrease',
+      itemId: itemId,
+    };
     makeApiRequest(
       'consumer/changeCartItemQuantity',
       'POST',
       Body,
       state?.userData?.userData,
     ).then(response => {
-      console.log(response.apiResponseData);
- fetchData()
-  
+      console.log(state?.userData?.userData);
+      fetchData();
     });
-    setCartData((prevCartData) =>
-      prevCartData.map((item) =>
-        item.productId === itemId && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item
-      )
+    setCartData(prevCartData =>
+      prevCartData.map(item =>
+        item.productId === itemId && item.quantity > 1
+          ? {...item, quantity: item.quantity - 1}
+          : item,
+      ),
     );
   };
 
-  const deleteItem = (itemId) => {
+  const deleteItem = itemId => {
     const mobileNumber = '9477245638';
 
     let completeObject = {
-      itemId:itemId,
+      itemId: itemId,
       mobileNumber: mobileNumber,
     };
-  
+
     makeApiRequest(
       'consumer/removeItemFromCart',
       'POST',
       completeObject,
       state?.userData?.userData,
     ).then(response => {
-      console.log(response.apiResponseData);
- 
-  
+      console.log(response);
     });
-    setCartData((prevCartData) => prevCartData.filter((item) => item.productId !== itemId));
+    setCartData(prevCartData =>
+      prevCartData.filter(item => item.productId !== itemId),
+    );
   };
-  const renderItem = ({ item }) => (
+  const renderItem = ({item}) => (
     <View style={styles.card}>
-      <Image
-        style={styles.itemImage}
-        source={{ uri: item?.images }} // Placeholder image, replace with actual URL
-      />
+      {item.images ? (
+        <Image
+          style={styles.itemImage}
+          source={{uri: item?.images[0]}} // Placeholder image, replace with actual URL
+        />
+      ) : (
+        ''
+      )}
       <View style={styles.itemDetails}>
         <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
-        <Text style={styles.total}>Total: ₹{(item.price * item.quantity).toFixed(2)}</Text>
+        <Text style={styles.itemPrice}>₹{item?.pricePerUnit?.toFixed(2)}</Text>
+        <Text style={styles.total}>
+          Total: ₹{(item?.pricePerUnit * item?.quantity).toFixed(2)}
+        </Text>
       </View>
-      <TouchableOpacity onPress={() => deleteItem(item.productId)} style={styles.deleteIconContainer}>
+      <TouchableOpacity
+        onPress={() => deleteItem(item.productId)}
+        style={styles.deleteIconContainer}>
         <Icon name="trash-o" size={18} color="#ff4d4d" />
       </TouchableOpacity>
       <View style={styles.quantityContainer}>
@@ -175,48 +210,53 @@ const CartScreen = ({navigation}) => {
       </View>
     </View>
   );
-  
-     const handlePayment = () => {
- 
-      var options = {
-        description: 'Credits towards consultation',
-        image: 'https://i.imgur.com/3g7nmJC.jpg',
-        currency: 'INR',
-        key: 'rzp_test_MTii2pjxumPAbE',
-        amount:calculateTotal().toFixed(2)*100,
-        // amount:1000, // Replace with the actual amount in paise
-        name: 'Krishi Mandi',
-        // order_id: 'order_NGUbZHsmizyi8U',//Replace this with an order_id created using Orders API.
-        prefill: {
-          email: 'chaudhary.sonendra@gmail.com',
-          contact: '9369318609',
-          name: 'Ekarigari system private limited'
-        },
-        theme: {color: '#53a20e'}
-      }
-      RazorpayCheckout.open(options).then((data) => {
+
+  const handlePayment = () => {
+    var options = {
+      description: 'Credits towards consultation',
+      image: 'https://i.imgur.com/3g7nmJC.jpg',
+      currency: 'INR',
+      key: 'rzp_test_MTii2pjxumPAbE',
+      amount: calculateTotal().toFixed(2) * 100,
+      // amount:1000, // Replace with the actual amount in paise
+      name: 'Krishi Mandi',
+      // order_id: 'order_NGUbZHsmizyi8U',//Replace this with an order_id created using Orders API.
+      prefill: {
+        email: 'chaudhary.sonendra@gmail.com',
+        contact: '9369318609',
+        name: 'Ekarigari system private limited',
+      },
+      theme: {color: '#53a20e'},
+    };
+    RazorpayCheckout.open(options)
+      .then(data => {
         // handle success
         // alert(`Success: ${data.razorpay_payment_id}`);
-        navigation.navigate("Orders", {
+        navigation.navigate('Orders', {
           orderNumber: '123456',
           date: new Date(),
           totalAmount: calculateTotal().toFixed(2),
         });
-      }).catch((error) => {
+      })
+      .catch(error => {
         // handle failure
         alert(`Error: ${error.code} | ${error.description}`);
       });
-     } 
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Your Cart</Text>
-      <FlatList
-        data={cartData}
-        keyExtractor={(item) => item.productId}
-        renderItem={renderItem}
-        style={styles.flatList}
-      />
+      {cartData?.length !== 0 ? (
+        <FlatList
+          data={cartData}
+          keyExtractor={item => item.productId}
+          renderItem={renderItem}
+          style={styles.flatList}
+        />
+      ) : (
+        ''
+      )}
 
       {/* <View style={styles.addressContainer}>
         <Text style={styles.addressLabel}>Delivery Address:</Text>
@@ -277,11 +317,15 @@ const CartScreen = ({navigation}) => {
 
       <View style={styles.billContainer}>
         <Text style={styles.billLabel}>Bill Details</Text>
-        <Text>Total Items: {cartData.length}</Text>
-        <Text>Total Amount: ₹{calculateTotal().toFixed(2)}</Text>
+        <Text>Total Items: {cartData?.length}</Text>
+        <Text>Total Amount: ₹{calculateTotal()}</Text>
       </View>
 
-      <TouchableOpacity style={styles.checkoutButton} onPress={()=>{handlePayment()}}>
+      <TouchableOpacity
+        style={styles.checkoutButton}
+        onPress={() => {
+          handlePayment();
+        }}>
         <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
       </TouchableOpacity>
       {/* <Button
@@ -343,7 +387,6 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 8,
-    
   },
   itemDetails: {
     flex: 1,

@@ -5,20 +5,20 @@ import { Card, Title, Paragraph, Button } from 'react-native-paper';
 
 const ProductDetails = ({ route }) => {
   const { item } = route.params;
-
+console.log(item);
   return (
     <View style={styles.container}>
 
       <Card style={styles.card}>
       <View style={styles.header}>
-        <Image source={{ uri: item.images }} style={styles.headerImage} />
+        <Image source={{ uri: item.images[0] }} style={styles.headerImage} />
       </View>
         <Card.Content style={styles.content}>
           <Title style={styles.title}>{item.name}</Title>
           <Paragraph style={styles.about}>{item.about}</Paragraph>
           <View style={styles.details}>
-            <Text style={styles.price}>Price: ₹{item.price}</Text>
-            <Text style={styles.quantity}>Quantity: {item.quantityPerUnit}</Text>
+            <Text style={styles.price}>Price: ₹{item.pricePerUnit}</Text>
+            {/* <Text style={styles.quantity}>Quantity: {item.quantityPerUnit}</Text> */}
             {/* <Text style={styles.quality}>Quality: {item.quality}</Text> */}
             <Text style={styles.seller}>Seller: {item.sellerName}</Text>
           </View>

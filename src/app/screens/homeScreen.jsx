@@ -32,7 +32,7 @@ const HomeScreen = ({ navigation, route }) => {
   const [product, setProduct] = useState([]);
   const [searchTerm, setSearchTerm] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([
     { id: 1, name: 'Crops', color: 'orange', selected: false },
     { id: 2, name: 'Vegetable', color: 'green', selected: false },
@@ -44,6 +44,45 @@ const HomeScreen = ({ navigation, route }) => {
   }, [navigation]);
   const openDrawer = () => {
     navigation.dispatch(DrawerActions.openDrawer());
+  };
+  const adjustQuantity = (productId, change) => {
+    setProductQuantities({
+      ...productQuantities,
+      [productId]: (productQuantities[productId] || 0) + change,
+    });
+    let product = {
+      ...productQuantities,
+      [productId]: (productQuantities[productId] || 0) + change,
+    };
+    console.log(product);
+    // Iterate through the quantityMap and retrieve product details
+    for (const productId in product) {
+      const quantity = product[productId];
+      const productDetails = getProductDetails(productId, quantity);
+
+      if (productDetails) {
+        console.log(`Product ID: ${productId}, Quantity: ${quantity}`);
+        console.log('Product Details:', productDetails);
+        console.log('-----------------------------');
+      
+        let Body = {
+          item: productDetails,
+          mobileNumber: '9477245638',
+        };
+        makeApiRequest(
+          'consumer/addItemToCart',
+          'POST',
+          Body,
+          state?.userData?.userData,
+        ).then(response => {
+          console.log(response.apiResponseData);
+          // setProducts(response.apiResponseData);
+        });
+   
+      } else {
+        console.log(`Product with ID ${productId} not found.`);
+      }
+    }
   };
   const onSelectCategory = async (item) => {
     console.log("is item selected ", item.selected)
@@ -91,25 +130,30 @@ const HomeScreen = ({ navigation, route }) => {
     const result = await makeApiRequest('consumer/getProducts', 'POST', bodyData, token)
     if (result.status) {
       console.log("size of products for bodydata", bodyData, " size ", result.payload.length)
-      setProduct(result.payload)
+      setProduct(result?.payload)
+      setProducts(result?.payload)
       setLoading(false)
     }
     else {
       console.log("in else case i dont know what to do")
     }
   };
+  const showProduct=(item)=>{
+    navigation.navigate('Product', { item })
+  }
   const renderProductItem = ({ item }) => (
-    <View style={styles1.productItem}>
+    <TouchableOpacity style={styles1.productItem} onPress={() => showProduct(item)}>
       <Image source={{ uri: item.images[0] }} style={styles1.productImage} />
       <View style={styles1.productDetails}>
-        <Text style={[styles1.productName, {color:"black"}]}>{item.name}</Text>
+        <Text style={[styles1.productName, { color: "black" }]}>{item.name}</Text>
         <Text style={styles1.productPrice}>{`${item.pricePerUnit.toFixed(2)}rs per ${item.unit}`}</Text>
-        <TouchableOpacity style={styles1.addButton} onPress={() => addToCart(item)}>
-        <Text style={[styles1.addButtonText, {justifyContent:"center",alignContent:"center",alignItems:"center",alignSelf:"center"}]}>Add to Cart</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles1.addButton} onPress={() =>   adjustQuantity(item.productId, 1)}>
+          <Text style={[styles1.addButtonText, { justifyContent: "center", alignContent: "center", alignItems: "center", alignSelf: "center" }]}>Add to Cart</Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
+  
   const handleSearch = text => {
     setSearchTerm([]);
     const filteredData = product.filter(item =>
@@ -130,7 +174,33 @@ const HomeScreen = ({ navigation, route }) => {
       <Image source={item} style={styles.image} resizeMode="cover" />
     </View>
   );
+  function getProductDetails(productId, quantity) {
+    const product = products.find(item => item.productId === productId);
+    if (product) {
+      const {
+        name,
+        type,
+        color,
+        pricePerUnit:pricePerUnit,
+        quantity: avai,
+        about,
+        images,
+      } = product;
 
+      return {
+        productId: productId,
+        name,
+        type,
+        color,
+        pricePerUnit:pricePerUnit,
+        quantity: quantity,
+        about,
+        images,
+      };
+    }
+
+    return null;
+  }
   return (
     <ScrollView style={styles.container}>
       <CustomHeader
@@ -154,7 +224,7 @@ const HomeScreen = ({ navigation, route }) => {
       </View>
       <View>
         <Animated.View style={styles2.container}>
-          <Text style={styles2.title}>Categories</Text>
+          <Text style={styles2.title}></Text>
           <FlatList
             data={categories}
             keyExtractor={(item) => item.id.toString()}
@@ -174,7 +244,7 @@ const HomeScreen = ({ navigation, route }) => {
             )}
           />
         </Animated.View>
-        <Text style={styles.title}>Products</Text>
+        {/* <Text style={styles.title}></Text> */}
       </View>
 
       {loading ? (
@@ -189,7 +259,7 @@ const HomeScreen = ({ navigation, route }) => {
               No Products to show
             </Text>
           ) : (
-            <FlatList nestedScrollEnabled
+            <FlatList 
               data={product}
               keyExtractor={(item) => item._id}
               renderItem={renderProductItem}
@@ -267,7 +337,7 @@ const styles1 = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'white',
   },
   addButton: {
     marginTop:5,

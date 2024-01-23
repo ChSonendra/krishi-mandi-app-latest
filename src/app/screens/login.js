@@ -10,8 +10,9 @@ function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const handleLogin = async () => {
     setLoading(true);
-    if (phoneNumber.trim() === '' || phoneNumber.length != 10) {
+    if (phoneNumber.trim() === '' || phoneNumber.length !== 10) {
       Alert.alert('Please enter a valid 10-digit phone number.');
+      setLoading(false); // Make sure to set loading to false here
     } else {
       try {
         const result = await makeApiRequest('consumer/sendOtpMobile', 'POST', {
@@ -24,32 +25,26 @@ function LoginScreen({ navigation }) {
             ToastAndroid.SHORT,
             ToastAndroid.BOTTOM,
           );
-          setLoading(false);
           navigation.navigate('Otp', { mobileNumber: phoneNumber });
-        }
-        else {
+        } else {
           ToastAndroid.showWithGravity(
             "couldn't send otp try again later",
             ToastAndroid.SHORT,
             ToastAndroid.BOTTOM,
           );
-          setLoading(false)
         }
       } catch (error) {
         ToastAndroid.showWithGravity(
-          "some error occured, please try again later",
+          "some error occurred, please try again later",
           ToastAndroid.SHORT,
           ToastAndroid.BOTTOM,
         );
-        setLoading(false)
       } finally {
-        console.log("In finally")
-        setTimeout(() => {
-          setLoading(false);
-        }, 5000);
+        setLoading(false); // Set loading to false here
       }
     }
   };
+  
 
   return (
     <View style={styles.container}>
@@ -95,7 +90,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   buttonContainer: {
-    marginTop: 30,
+    marginTop: 100,
     width: '100%',
   },
   loginButton: {

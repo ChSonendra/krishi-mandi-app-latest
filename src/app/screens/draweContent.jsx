@@ -26,8 +26,8 @@ useEffect(() => {
   ).then(response => {
     console.log(response);
     // if (response.apiResponseData.status === 'success') {
-      setName(response.apiResponseData.name);
-      setEmail(response.apiResponseData.email);
+      setName(response?.payload.name);
+      setEmail(response?.payload.email);
     // }
   
   })

@@ -1,5 +1,5 @@
 // ProfileScreen.js
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Avatar, Button, Card, Title, Paragraph, Divider, TextInput } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -12,9 +12,11 @@ const ProfileScreen = () => {
   const navigation = useNavigation();
   const [name, setName] = useState('John Doe');
   const [address, setAddress] = useState([]);
+  const [addressId, setAddressId] = useState([]);
+
   const [email, setEmail] = useState('john.doe@example.com');
   const [phone, setPhone] = useState('555-1234');
-  const state=store.getState()
+  const state = store.getState()
   useEffect(() => {
     const mobileNumber = '9477245638';
     let completeObject = {
@@ -28,16 +30,41 @@ const ProfileScreen = () => {
     ).then(response => {
       console.log(response);
       // if (response.apiResponseData.status === 'success') {
-        setName(response.apiResponseData.name);
-        setEmail(response.apiResponseData.email);
-        setPhone(response.apiResponseData.mobile);
-        const addressesArray = Object.values(response?.apiResponseData?.addresses);
-        console.log(addressesArray);
-        setAddress(addressesArray);
+      setName(response?.payload?.name);
+      setEmail(response.payload.email);
+      setPhone(response.payload.mobile);
+      const addressesArray = Object.values(response?.payload?.addresses);
+      console.log(addressesArray);
+      setAddress(addressesArray);
+      setAddressId(Object?.keys(response?.payload?.addresses));
+
       // }
-    
+
     })
   }, [])
+  const fetchData = () => {
+    const mobileNumber = '9477245638';
+    let completeObject = {
+      mobileNumber: mobileNumber,
+    };
+    makeApiRequest(
+      'consumer/getUserProfile',
+      'POST',
+      completeObject,
+      state?.userData?.userData
+    ).then(response => {
+      console.log(response);
+      // if (response.apiResponseData.status === 'success') {
+      setName(response?.payload?.name);
+      setEmail(response.payload.email);
+      setPhone(response.payload.mobile);
+      const addressesArray = Object.values(response?.payload?.addresses);
+      setAddressId(Object?.keys(response?.payload?.addresses));
+      setAddress(addressesArray);
+      // }
+
+    })
+  }
   const handleEditProfile = () => {
     navigation.navigate('EditProfile', {
       name,
@@ -48,15 +75,15 @@ const ProfileScreen = () => {
     });
   };
 
-  const handleSaveChanges = (newName,  newEmail, newPhone) => {
+  const handleSaveChanges = (newName, newEmail, newPhone) => {
     setName(newName);
     setEmail(newEmail);
     setPhone(newPhone);
     let completeObject = {
-      name:newName
+      name: newName
     };
     let Body = {
-      email:newEmail
+      email: newEmail
     };
     makeApiRequest(
       'consumer/setEmail',
@@ -65,8 +92,8 @@ const ProfileScreen = () => {
       state?.userData?.userData,
     ).then(response => {
       console.log(response.apiResponseData);
- 
-  
+
+
     });
     makeApiRequest(
       'consumer/setName',
@@ -75,44 +102,61 @@ const ProfileScreen = () => {
       state?.userData?.userData,
     ).then(response => {
       console.log(response.apiResponseData);
- 
-  
+
+
     });
   };
+  const handleRemoveAddress = (index) => {
+    let Body = {
+
+      addressId: addressId[index],
+    };
+    makeApiRequest(
+      'consumer/removeAddress',
+      'POST',
+      Body,
+      state?.userData?.userData,
+    ).then(response => {
+      console.log(response);
+      fetchData()
+      // setAddress(newAddress)
+
+    });
+  }
   const handleAddAddress = (newAddress) => {
- 
+
     console.log('New Address Added:', newAddress);
     let Body = {
-    
+
       address: newAddress,
     };
-      setAddress(newAddress)
+    // setAddress([newAddress])
 
-  
+
     makeApiRequest(
       'consumer/addAddress',
       'POST',
       Body,
       state?.userData?.userData,
     ).then(response => {
-      console.log(response.apiResponseData);
- 
+      console.log(response);
+      fetchData()
       // setAddress(newAddress)
-  
+
     });
   };
   const getInitials = (fullName) => {
     const names = fullName.split(' ');
     return names.map((name) => name[0]).join('').toUpperCase();
   };
-  const renderAddressCard = (address,id) => (
+  const renderAddressCard = (address, index) => (
     <Card key={id} style={styles.addressCard}>
       <Card.Content>
         <Title>{address.address}</Title>
         <Paragraph>{address.street} {address.city}, {address.pin}</Paragraph>
       </Card.Content>
       <Card.Actions style={styles.cardActions}>
-      <Icon name="trash-o" size={18} color="#ff4d4d" />
+        <Icon name="trash-o" size={18} color="#ff4d4d" onPress={() => handleRemoveAddress(index)} />
 
         {/* <IconButton icon="delete" onPress={() => handleRemoveAddress(address.id)} /> */}
       </Card.Actions>
@@ -121,7 +165,7 @@ const ProfileScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-      <TouchableOpacity onPress={handleEditProfile} style={styles.editButtonContainer}>
+        <TouchableOpacity onPress={handleEditProfile} style={styles.editButtonContainer}>
           <Title style={styles.editButtonText}>Edit</Title>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleEditProfile}>
@@ -131,7 +175,7 @@ const ProfileScreen = () => {
         <Paragraph style={styles.text}>Email: {email}</Paragraph>
         {/* <Paragraph style={styles.text}>Address:{address?.address} {address.city} {address.street} {address.pin}</Paragraph> */}
         <Paragraph style={styles.text}>Phone: {phone}</Paragraph>
-        
+
       </View>
 
       <Divider style={styles.divider} />
@@ -140,12 +184,12 @@ const ProfileScreen = () => {
         <Title style={styles.sectionTitle}>Addresses</Title>
         {/* Render addresses here */}
         {/* Example: */}
-        {address.map((address,id) => renderAddressCard(address,id))}
+        {address.map((address, id) => renderAddressCard(address, id))}
         {/* <View style={styles.addressItem}>
           <Paragraph style={styles.addressText}>456 Park Ave, Townsville</Paragraph>
         </View> */}
         {/* Add more addresses as needed */}
-        <Button icon="plus" mode="outlined"  onPress={() => navigation.navigate('Address', { onAddAddress: handleAddAddress })} style={styles.addButton}>
+        <Button icon="plus" mode="outlined" onPress={() => navigation.navigate('Address', { onAddAddress: handleAddAddress })} style={styles.addButton}>
           Add Address
         </Button>
       </View>
@@ -156,21 +200,21 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   addressCard: {
     marginBottom: 16,
-    backgroundColor:'white'
+    backgroundColor: 'white'
   },
   cardActions: {
     justifyContent: 'flex-end',
   },
-    editButtonContainer: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        padding: 10,
-      },
-      editButtonText: {
-        color: 'gray',
-        fontWeight: 'bold',
-      },
+  editButtonContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    padding: 10,
+  },
+  editButtonText: {
+    color: 'gray',
+    fontWeight: 'bold',
+  },
   container: {
     flex: 1,
     backgroundColor: 'white',
@@ -196,7 +240,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'lightgrey',
   },
   addressSection: {
-    padding: 16,
+    padding: 12,
   },
   sectionTitle: {
     fontSize: 20,

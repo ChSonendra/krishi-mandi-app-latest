@@ -15,6 +15,7 @@ export const makeApiRequest = async (functionName, method, Body = null, authToke
       if (Body !== null) {
         const body = JSON.stringify(Body);
         const result = await axios.post(apiUrl, body, { headers: headers })
+        console.log(result);
         if (result.data.apiResponseStatus) {
           return {
             status: true,
@@ -38,6 +39,8 @@ export const makeApiRequest = async (functionName, method, Body = null, authToke
     else if (method == "GET") {
       const body = JSON.stringify(Body);
       const result = await axios.post(apiUrl, { headers: headers })
+      console.log(result);
+
       if (result.data.apiResponseStatus) {
         return {
           status: true,
