@@ -1,6 +1,5 @@
-// EditProfileScreen.js
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet,ToastAndroid } from 'react-native';
 import { Button, Card, TextInput } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
@@ -10,15 +9,38 @@ const EditProfileScreen = () => {
   const { name, email, phone, onSave } = route.params;
 
   const [newName, setNewName] = useState(name);
-  // const [newAddress, setNewAddress] = useState(address);
   const [newEmail, setNewEmail] = useState(email);
   const [newPhone, setNewPhone] = useState(phone);
 
   const handleSaveChanges = () => {
+    // Basic validations
+    if (!newName.trim() || !newEmail.trim() || !newPhone.trim()) {
+      ToastAndroid.showWithGravity(
+        "Please enter valid details",
+        ToastAndroid.SHORT,
+        ToastAndroid.BOTTOM,
+      );
+      return;
+    }
+  
+    // Email and phone number validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{10}$/;
+  
+    if (!emailRegex.test(newEmail) || !phoneRegex.test(newPhone)) {
+      ToastAndroid.showWithGravity(
+        "Please enter valid email and phone number",
+        ToastAndroid.SHORT,
+        ToastAndroid.BOTTOM,
+      );
+      return;
+    }
+  
+    // All validations passed, proceed to save changes
     onSave(newName, newEmail, newPhone);
-    navigation.goBack();
-
+    navigation.navigate('Profile');
   };
+  
 
   return (
     <View style={styles.container}>
@@ -26,7 +48,6 @@ const EditProfileScreen = () => {
         <Card.Title title="Edit Profile" titleStyle={styles.cardTitle} />
         <Card.Content>
           <TextInput label="Name" value={newName} onChangeText={setNewName} style={styles.input} />
-          {/* <TextInput label="Address" value={newAddress} onChangeText={setNewAddress} style={styles.input} /> */}
           <TextInput label="Email" value={newEmail} onChangeText={setNewEmail} style={styles.input} />
           <TextInput label="Phone" value={newPhone} onChangeText={setNewPhone} style={styles.input} />
         </Card.Content>

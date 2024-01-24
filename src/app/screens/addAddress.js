@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { TextInput, Button, Title, Subheading, Divider } from 'react-native-paper';
+import { TextInput, Button, Title, Subheading, Divider, Snackbar } from 'react-native-paper';
 import Geolocation from 'react-native-geolocation-service';
 
 Geolocation.setRNConfiguration({
@@ -17,11 +17,25 @@ const AddAddressScreen = ({ route }) => {
   const [pin, setPin] = useState('');
   const [autoDetectLocation, setAutoDetectLocation] = useState(false);
   const [location, setLocation] = useState(false);
-
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
   const handleAddAddress = () => {
+    if (!address || !street || !city || !pin) {
+      setSnackbarVisible(true);
+      return;
+    }
+    const pinRegex = /^\d{6}$/;
+    if (!pinRegex.test(pin)) {
+      setSnackbarVisible(true);
+      return;
+    }
+  
     const newAddress = { address, street, city, pin };
     route.params.onAddAddress(newAddress);
     navigation.navigate('Profile');
+  };
+
+  const onSnackbarDismiss = () => {
+    setSnackbarVisible(false);
   };
 
   const getLocation = () => {
@@ -95,6 +109,18 @@ const AddAddressScreen = ({ route }) => {
       >
         Add Address
       </Button>
+      
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={onSnackbarDismiss}
+        action={{
+          label: 'OK',
+          onPress: onSnackbarDismiss,
+        }}
+      >
+        Please enter all required fields.
+      </Snackbar>
+
     </View>
   );
 };

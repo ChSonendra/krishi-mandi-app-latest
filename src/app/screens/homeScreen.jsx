@@ -215,7 +215,7 @@ const HomeScreen = ({ navigation, route }) => {
       <Image source={{ uri: item.images[0] }} style={styles1.productImage} />
       <View style={styles1.productDetails}>
         <Text style={[styles1.productName, { color: "black" }]}>{item.name}</Text>
-        <Text style={styles1.productPrice}>{`${item.pricePerUnit.toFixed(2)}rs per ${item.unit}`}</Text>
+        <Text style={styles1.productPrice}>₹{`${item.pricePerUnit.toFixed(0)} / ${item.unit}`}</Text>
         <TouchableOpacity style={styles1.addButton} onPress={() =>   adjustQuantity(item.productId, 1)}>
         <Text style={[styles1.addButtonText, { justifyContent: "center", alignContent: "center", alignItems: "center", alignSelf: "center" }]}>
             {isProductInCart(item.productId) ? 'Go to Cart' : 'Add to Cart'}

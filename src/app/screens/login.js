@@ -92,7 +92,7 @@ function LoginScreen({ navigation }) {
           { loading ? (
             <ActivityIndicator style={{color:"blue",justifyContent:"center",alignContent:"center",alignItems:"center",alignSelf:"center"}} />
           ) : (
-            <Text style={styles.buttonText}>Login</Text>
+            <Text style={styles.buttonText} onPress={handleLogin}>Login</Text>
           )}
         </Button>
       </View>

@@ -17,7 +17,14 @@ import {makeApiRequest} from '../services/api';
 import {useFocusEffect} from '@react-navigation/native';
 import RazorpayCheckout from 'react-native-razorpay';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Modal, List, Portal,RadioButton } from 'react-native-paper';
+import {
+  Modal,
+  List,
+  Portal,
+  RadioButton,
+  ActivityIndicator,
+} from 'react-native-paper';
+import LottieView from 'lottie-react-native';
 const CartScreen = ({navigation}) => {
   const state = store.getState();
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -25,17 +32,16 @@ const CartScreen = ({navigation}) => {
   const [visible, setVisible] = useState(false);
   const [cartData, setCartData] = useState([]);
   const [cartAddress, setCartAddress] = useState([]);
-
-  // ... (other useEffect and state management code)
+  const [loading, setLoading] = useState(true);
 
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
 
-  const handleAddressSelection = (address) => {
+  const handleAddressSelection = address => {
     setSelectedAddress(address);
     hideModal();
   };
-  const handleAddressSelected = (item) => {
+  const handleAddressSelected = item => {
     // Handle actions after the address is selected
     console.log('Address selected:', selectedAddress);
     // You can perform additional actions here if needed
@@ -44,45 +50,44 @@ const CartScreen = ({navigation}) => {
     handlePayment();
   };
   const renderAddressSelectorModal = () => {
-
     return (
       <Portal>
-      <Modal
-        visible={visible}
-        onDismiss={hideModal}
-        contentContainerStyle={styles.addressSelectorContainer}
-      >
-        <Text style={styles.addressLabel}>Select Delivery Address</Text>
-        <FlatList
-          data={cartAddress}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.addressItem}
-              onPress={() => handleAddressSelected(item)}
-            >
-              <RadioButton
-                value={item.id}
-                status={
-                  selectedAddress && selectedAddress.id === item.id
-                    ? 'checked'
-                    : 'unchecked'
-                }
-                onPress={() => handleAddressSelected(item)}
-                color="#4CAF50" 
-              />
-              <Text style={styles.addressText}>{item?.address}{item?.street} {item?.city}, {item?.pin}</Text>
-            </TouchableOpacity>
-          )}
-        />
-        <TouchableOpacity onPress={hideModal} style={styles.cancelButton}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      </Modal>
-    </Portal>
+        <Modal
+          visible={visible}
+          onDismiss={hideModal}
+          contentContainerStyle={styles.addressSelectorContainer}>
+          <Text style={styles.addressLabel}>Select Delivery Address</Text>
+          <FlatList
+            data={cartAddress}
+            keyExtractor={item => item.id}
+            renderItem={({item}) => (
+              <TouchableOpacity
+                style={styles.addressItem}
+                onPress={() => handleAddressSelected(item)}>
+                <RadioButton
+                  value={item.id}
+                  status={
+                    selectedAddress && selectedAddress.id === item.id
+                      ? 'checked'
+                      : 'unchecked'
+                  }
+                  onPress={() => handleAddressSelected(item)}
+                  color="#4CAF50"
+                />
+                <Text style={styles.addressText}>
+                  {item?.address}
+                  {item?.street} {item?.city}, {item?.pin}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity onPress={hideModal} style={styles.cancelButton}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </Modal>
+      </Portal>
     );
   };
-
 
   useEffect(() => {
     // Check if there is a stored phone number and populate the state
@@ -127,9 +132,11 @@ const CartScreen = ({navigation}) => {
           }));
           const addressesArray = Object.values(response?.payload?.addresses);
           setCartData(simplifiedList);
-          setCartAddress(addressesArray)
+          setCartAddress(addressesArray);
         } catch (error) {
           console.error('Error fetching data:', error);
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -137,14 +144,14 @@ const CartScreen = ({navigation}) => {
     }, [state?.userData?.userData]),
   );
 
-
   const calculateTotal = () => {
     return cartData?.reduce(
-      (total, item) => total + item.pricePerUnit * parseInt(item?.cartQuantity, 10),
+      (total, item) =>
+        total + item.pricePerUnit * parseInt(item?.cartQuantity, 10),
       0,
     );
   };
-  
+
   const fetchData = async () => {
     const mobileNumber = '9477245638';
     let completeObject = {
@@ -171,10 +178,12 @@ const CartScreen = ({navigation}) => {
         quantity: inputData[key].quantity,
       }));
       const addressesArray = Object.values(response?.payload?.addresses);
-          setCartData(simplifiedList);
-          setCartAddress(addressesArray)
+      setCartData(simplifiedList);
+      setCartAddress(addressesArray);
     } catch (error) {
       console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
     }
   };
   const increaseQuantity = itemId => {
@@ -257,8 +266,9 @@ const CartScreen = ({navigation}) => {
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemPrice}>₹{item?.pricePerUnit?.toFixed(2)}</Text>
         <Text style={styles.total}>
-    Total: ₹{(item?.pricePerUnit * parseInt(item?.cartQuantity, 10))?.toFixed(2)}
-  </Text>
+          Total: ₹
+          {(item?.pricePerUnit * parseInt(item?.cartQuantity, 10))?.toFixed(2)}
+        </Text>
       </View>
       <TouchableOpacity
         onPress={() => deleteItem(item.productId)}
@@ -316,42 +326,78 @@ const CartScreen = ({navigation}) => {
 
   return (
     <View style={styles.container}>
+   <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Icon name="arrow-left" size={20} color="#333" />
+      </TouchableOpacity>
+
       <Text style={styles.title}> Cart</Text>
-      {cartData?.length !== 0 ? (
-        <FlatList
-          data={cartData}
-          keyExtractor={item => item.productId}
-          renderItem={renderItem}
-          style={styles.flatList}
+
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="#4CAF50"
+          style={styles.loadingIndicator}
         />
       ) : (
-        <Text style={{ marginTop: 20, marginBottom:40,color: 'black', alignContent:"center",alignItems:"center",alignSelf:"center"}}>
-        Your Cart is Empty!
+        <>
+          {cartData?.length !== 0 ? (
+            <FlatList
+              data={cartData}
+              keyExtractor={item => item.productId}
+              renderItem={renderItem}
+              style={styles.flatList}
+            />
+          ) : (
+            <View
+              style={{
+                flex: 0.5,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+              <Text
+                style={{marginTop: 20, color: 'black', textAlign: 'center'}}>
+                Your Cart is Empty!
+              </Text>
+              <LottieView
+                style={styles.logo}
+                source={require('../../assets/images/cart.json')}
+                autoPlay
+                loop
+              />
+            </View>
+          )}
 
-      </Text>
+          <View style={styles.billContainer}>
+            <Text style={styles.billLabel}>Bill Details</Text>
+            <Text>Total Items: {cartData?.length}</Text>
+            <Text>Total Amount: ₹{calculateTotal()}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.checkoutButton}
+            onPress={() => {
+              showModal();
+            }}>
+            <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+          </TouchableOpacity>
+
+          {renderAddressSelectorModal()}
+        </>
       )}
-
-
-
-      <View style={styles.billContainer}>
-        <Text style={styles.billLabel}>Bill Details</Text>
-        <Text>Total Items: {cartData?.length}</Text>
-        <Text>Total Amount: ₹{calculateTotal()}</Text>
-      </View>
-
-      <TouchableOpacity
-        style={styles.checkoutButton}
-        onPress={() => {
-          showModal()
-        }}>
-        <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
-      </TouchableOpacity>
-      {renderAddressSelectorModal()}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  backButton: {
+    position: 'absolute',
+    top: 22,
+    left: 15,
+    zIndex: 1,
+  },
+  loadingIndicator: {
+    marginTop: 20,
+  },
   container: {
     flex: 1,
     padding: 16,
@@ -361,6 +407,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
+    marginLeft:16,
     color: '#333',
   },
   card: {
@@ -495,6 +542,12 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 16,
     color: '#555',
+  },
+  logo: {
+    // fontSize: 24,
+    width: 200,
+    height: 200,
+    alignItems: 'center',
   },
 });
 

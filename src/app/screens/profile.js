@@ -1,7 +1,7 @@
 // ProfileScreen.js
 import React, { useState, useEffect } from 'react';
 import { ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Avatar, Button, Card, Title, Paragraph, Divider, TextInput } from 'react-native-paper';
+import { Avatar, Button, Card, Title, Paragraph, Divider, TextInput, ActivityIndicator } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { store } from '../redux/store';
 import { makeApiRequest } from '../services/api';
@@ -14,7 +14,7 @@ const ProfileScreen = () => {
   const [name, setName] = useState('John Doe');
   const [address, setAddress] = useState([]);
   const [addressId, setAddressId] = useState([]);
-
+  const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('555-1234');
   const state = store.getState()
@@ -55,7 +55,7 @@ const ProfileScreen = () => {
       console.log(addressesArray);
       setAddress(addressesArray);
       setAddressId(Object?.keys(response?.payload?.addresses));
-
+setLoading(false)
       // }
 
     })
@@ -80,6 +80,8 @@ const ProfileScreen = () => {
       setAddressId(Object?.keys(response?.payload?.addresses));
       setAddress(addressesArray);
       // }
+setLoading(false)
+
 
     })
   }
@@ -184,14 +186,13 @@ const ProfileScreen = () => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleEditProfile} style={styles.editButtonContainer}>
-     {email!==''&&  <Title style={styles.editButtonText}>Edit</Title>}
+     {email===''&&  <Title style={styles.editButtonText}>Edit</Title>}
         </TouchableOpacity>
         <TouchableOpacity onPress={handleEditProfile}>
           <Avatar.Text style={styles.avatar} label={getInitials(name)} size={100} />
         </TouchableOpacity>
         <Title style={styles.title}>{name}</Title>
         <Paragraph style={styles.text}>Email: {email}</Paragraph>
-        {/* <Paragraph style={styles.text}>Address:{address?.address} {address.city} {address.street} {address.pin}</Paragraph> */}
         <Paragraph style={styles.text}>Phone: {phone}</Paragraph>
 
       </View>
@@ -200,16 +201,17 @@ const ProfileScreen = () => {
 
       <View style={styles.addressSection}>
         <Title style={styles.sectionTitle}>Addresses</Title>
-        {/* Render addresses here */}
-        {/* Example: */}
+        {loading ? (
+          <ActivityIndicator size="large" color="#4CAF50" style={styles.loadingIndicator} />
+        ) : (
+          <>
         {address.map((address, id) => renderAddressCard(address, id))}
-        {/* <View style={styles.addressItem}>
-          <Paragraph style={styles.addressText}>456 Park Ave, Townsville</Paragraph>
-        </View> */}
-        {/* Add more addresses as needed */}
+
         <Button icon="plus" mode="outlined" onPress={() => navigation.navigate('Address', { onAddAddress: handleAddAddress })} style={styles.addButton}>
           Add Address
         </Button>
+        </>
+        )}
       </View>
     </ScrollView>
   );
