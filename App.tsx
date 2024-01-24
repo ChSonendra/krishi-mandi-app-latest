@@ -47,9 +47,12 @@ function App(): JSX.Element {
 
   return (
     <Provider store={store}>
+
     <PersistGate loading={null} persistor={persistor}>
+      <PaperProvider>
     {/* <NavigationContainer> */}
               <AppNavigator/>
+              </PaperProvider>
   {/* </NavigationContainer>r */}
   </PersistGate>
    </Provider>

@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { makeApiRequest } from '../services/api';
 import { store } from '../redux/store';
 import { CLEARSTORE } from '../redux/Actions/actionLogout';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const CustomDrawerContent = (props) => {
   const { navigation } = props;
   const state=store.getState()
@@ -13,10 +14,27 @@ const CustomDrawerContent = (props) => {
   const [name, setName] = useState('Your Name');
   const [email, setEmail] = useState('YourEmail@example.com');
   const [modalVisible, setModalVisible] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  useEffect(() => {
+    // Check if there is a stored phone number and populate the state
+    const getStoredPhoneNumber = async () => {
+      try {
+        const storedNumber = await AsyncStorage.getItem('phoneNumber');
+        if (storedNumber) {
+          setPhoneNumber(storedNumber);
+        }
+      } catch (error) {
+        console.error('Error retrieving phone number:', error);
+      }
+    };
+
+    getStoredPhoneNumber();
+  }, []);
 useEffect(() => {
   const mobileNumber = '9477245638';
   let completeObject = {
-    mobileNumber: mobileNumber,
+    mobileNumber: phoneNumber,
   };
   makeApiRequest(
     'consumer/getUserProfile',

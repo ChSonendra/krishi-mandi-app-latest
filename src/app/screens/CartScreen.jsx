@@ -16,30 +16,95 @@ import {store} from '../redux/store';
 import {makeApiRequest} from '../services/api';
 import {useFocusEffect} from '@react-navigation/native';
 import RazorpayCheckout from 'react-native-razorpay';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Modal, List, Portal,RadioButton } from 'react-native-paper';
 const CartScreen = ({navigation}) => {
   const state = store.getState();
-  const [cartData, setCartData] = useState([
-    {
-      id: 'ab519a0d-8fa4-4f3f-aff4-a0b782dbbef6',
-      name: 'Potato',
-      price: 25,
-      quantity: 1,
-    },
-    {
-      id: 'aba9e883-5b56-4916-91de-2f8d2f30013a',
-      name: 'Tomato',
-      price: 48,
-      quantity: 2,
-    },
-    // Add more items as needed
-  ]);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [visible, setVisible] = useState(false);
+  const [cartData, setCartData] = useState([]);
+  const [cartAddress, setCartAddress] = useState([]);
+
+  // ... (other useEffect and state management code)
+
+  const showModal = () => setVisible(true);
+  const hideModal = () => setVisible(false);
+
+  const handleAddressSelection = (address) => {
+    setSelectedAddress(address);
+    hideModal();
+  };
+  const handleAddressSelected = (item) => {
+    // Handle actions after the address is selected
+    console.log('Address selected:', selectedAddress);
+    // You can perform additional actions here if needed
+    setSelectedAddress(item);
+    // Proceed with the payment or any other steps
+    handlePayment();
+  };
+  const renderAddressSelectorModal = () => {
+
+    return (
+      <Portal>
+      <Modal
+        visible={visible}
+        onDismiss={hideModal}
+        contentContainerStyle={styles.addressSelectorContainer}
+      >
+        <Text style={styles.addressLabel}>Select Delivery Address</Text>
+        <FlatList
+          data={cartAddress}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.addressItem}
+              onPress={() => handleAddressSelected(item)}
+            >
+              <RadioButton
+                value={item.id}
+                status={
+                  selectedAddress && selectedAddress.id === item.id
+                    ? 'checked'
+                    : 'unchecked'
+                }
+                onPress={() => handleAddressSelected(item)}
+                color="#4CAF50" 
+              />
+              <Text style={styles.addressText}>{item?.address}{item?.street} {item?.city}, {item?.pin}</Text>
+            </TouchableOpacity>
+          )}
+        />
+        <TouchableOpacity onPress={hideModal} style={styles.cancelButton}>
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </Modal>
+    </Portal>
+    );
+  };
+
+
+  useEffect(() => {
+    // Check if there is a stored phone number and populate the state
+    const getStoredPhoneNumber = async () => {
+      try {
+        const storedNumber = await AsyncStorage.getItem('phoneNumber');
+        if (storedNumber) {
+          setPhoneNumber(storedNumber);
+        }
+      } catch (error) {
+        console.error('Error retrieving phone number:', error);
+      }
+    };
+
+    getStoredPhoneNumber();
+  }, []);
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
         const mobileNumber = '9477245638';
         let completeObject = {
-          mobileNumber: mobileNumber,
+          mobileNumber: phoneNumber,
         };
 
         try {
@@ -60,8 +125,9 @@ const CartScreen = ({navigation}) => {
             price: parseFloat(inputData[key].price),
             quantity: inputData[key].quantity,
           }));
+          const addressesArray = Object.values(response?.payload?.addresses);
           setCartData(simplifiedList);
-          console.log(simplifiedList[0].images[0]);
+          setCartAddress(addressesArray)
         } catch (error) {
           console.error('Error fetching data:', error);
         }
@@ -71,19 +137,18 @@ const CartScreen = ({navigation}) => {
     }, [state?.userData?.userData]),
   );
 
-  const [address, setAddress] = useState('');
-  const [selectedAddress, setSelectedAddress] = useState(null);
 
   const calculateTotal = () => {
     return cartData?.reduce(
-      (total, item) => total + item.pricePerUnit* item.quantity,
+      (total, item) => total + item.pricePerUnit * parseInt(item?.cartQuantity, 10),
       0,
     );
   };
+  
   const fetchData = async () => {
     const mobileNumber = '9477245638';
     let completeObject = {
-      mobileNumber: mobileNumber,
+      mobileNumber: phoneNumber,
     };
 
     try {
@@ -105,8 +170,9 @@ const CartScreen = ({navigation}) => {
         price: parseFloat(inputData[key].price),
         quantity: inputData[key].quantity,
       }));
-      setCartData(simplifiedList);
-      console.log(simplifiedList);
+      const addressesArray = Object.values(response?.payload?.addresses);
+          setCartData(simplifiedList);
+          setCartAddress(addressesArray)
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -162,7 +228,7 @@ const CartScreen = ({navigation}) => {
 
     let completeObject = {
       itemId: itemId,
-      mobileNumber: mobileNumber,
+      mobileNumber: phoneNumber,
     };
 
     makeApiRequest(
@@ -179,7 +245,7 @@ const CartScreen = ({navigation}) => {
   };
   const renderItem = ({item}) => (
     <View style={styles.card}>
-      {item.images ? (
+      {item?.images ? (
         <Image
           style={styles.itemImage}
           source={{uri: item?.images[0]}} // Placeholder image, replace with actual URL
@@ -191,8 +257,8 @@ const CartScreen = ({navigation}) => {
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemPrice}>₹{item?.pricePerUnit?.toFixed(2)}</Text>
         <Text style={styles.total}>
-          Total: ₹{(item?.pricePerUnit * item?.quantity).toFixed(2)}
-        </Text>
+    Total: ₹{(item?.pricePerUnit * parseInt(item?.cartQuantity, 10))?.toFixed(2)}
+  </Text>
       </View>
       <TouchableOpacity
         onPress={() => deleteItem(item.productId)}
@@ -212,6 +278,10 @@ const CartScreen = ({navigation}) => {
   );
 
   const handlePayment = () => {
+    // if (!selectedAddress) {
+    //   alert('Please select a delivery address.');
+    //   return;
+    // }
     var options = {
       description: 'Credits towards consultation',
       image: 'https://i.imgur.com/3g7nmJC.jpg',
@@ -246,7 +316,7 @@ const CartScreen = ({navigation}) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Your Cart</Text>
+      <Text style={styles.title}> Cart</Text>
       {cartData?.length !== 0 ? (
         <FlatList
           data={cartData}
@@ -255,65 +325,13 @@ const CartScreen = ({navigation}) => {
           style={styles.flatList}
         />
       ) : (
-        ''
+        <Text style={{ marginTop: 20, marginBottom:40,color: 'black', alignContent:"center",alignItems:"center",alignSelf:"center"}}>
+        Your Cart is Empty!
+
+      </Text>
       )}
 
-      {/* <View style={styles.addressContainer}>
-        <Text style={styles.addressLabel}>Delivery Address:</Text>
-        <GooglePlacesAutocomplete
-          placeholder="Search"
-          onPress={(data, details = null) => {
-            setAddress(data.description);
-            setSelectedAddress(details.geometry.location);
-          }}
-          query={{
-            key: 'YOUR_GOOGLE_MAPS_API_KEY',
-            language: 'en',
-          }}
-          styles={{
-            container: {
-              flex: 0,
-              zIndex: 1,
-            },
-            textInputContainer: {
-              borderWidth: 0,
-              borderTopWidth: 0,
-              borderBottomWidth: 1,
-              borderColor: '#ddd',
-              backgroundColor: 'transparent',
-            },
-            textInput: {
-              marginLeft: 0,
-              marginRight: 0,
-              height: 38,
-              color: '#5d5d5d',
-              fontSize: 14,
-            },
-            predefinedPlacesDescription: {
-              color: '#1faadb',
-            },
-          }}
-          currentLocation={false}
-        />
-        {selectedAddress && (
-          <MapView
-            style={{ height: 120, marginVertical: 10 }}
-            region={{
-              latitude: selectedAddress.lat,
-              longitude: selectedAddress.lng,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-          >
-            <Marker
-              coordinate={{
-                latitude: selectedAddress.lat,
-                longitude: selectedAddress.lng,
-              }}
-            />
-          </MapView>
-        )}
-      </View> */}
+
 
       <View style={styles.billContainer}>
         <Text style={styles.billLabel}>Bill Details</Text>
@@ -324,41 +342,11 @@ const CartScreen = ({navigation}) => {
       <TouchableOpacity
         style={styles.checkoutButton}
         onPress={() => {
-          handlePayment();
+          showModal()
         }}>
         <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
       </TouchableOpacity>
-      {/* <Button
-            title={'Pay with Razorpay'}
-            onPress={() => {
-              var options = {
-                description: 'Credits towards consultation',
-                image: 'https://i.imgur.com/3g7nmJC.png',
-                currency: 'INR',
-                key: 'rzp_test_MTii2pjxumPAbE', // Your api key
-                amount: '500',
-                name: 'Swati',
-                prefill: {
-                  email: 'void@razorpay.com',
-                  contact: '9191919191',
-                  name: 'Razorpay Software',
-                },
-                theme: {color: '#F37254'},
-              };
-              RazorpayCheckout.open(options)
-                .then(data => {
-                  // handle success
-                  alert(`Success: ${data.razorpay_payment_id}`);
-                })
-                .catch(error => {
-                  // handle failure
-                  alert(`Error: ${error.code} | ${error.description}`);
-                });
-            }}
-          />
-          <Button   title={'Pay with Razorpay'} onPress={() => {
- 
-}}></Button> */}
+      {renderAddressSelectorModal()}
     </View>
   );
 };
@@ -472,6 +460,41 @@ const styles = StyleSheet.create({
     color: '#fff', // White color
     fontWeight: 'bold',
     fontSize: 18,
+  },
+
+  addressSelectorContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+  },
+  addressLabel: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+  },
+  addressItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  addressText: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 8,
+  },
+  cancelButton: {
+    marginTop: 16,
+    backgroundColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: '#555',
   },
 });
 

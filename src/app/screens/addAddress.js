@@ -21,7 +21,7 @@ const AddAddressScreen = ({ route }) => {
   const handleAddAddress = () => {
     const newAddress = { address, street, city, pin };
     route.params.onAddAddress(newAddress);
-    navigation.goBack();
+    navigation.navigate('Profile');
   };
 
   const getLocation = () => {

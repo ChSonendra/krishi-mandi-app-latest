@@ -33,19 +33,83 @@ const HomeScreen = ({ navigation, route }) => {
   const [searchTerm, setSearchTerm] = useState([]);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
+  const [cartItems, setCartItems] = useState({});
   const [categories, setCategories] = useState([
     { id: 1, name: 'Crops', color: 'orange', selected: false },
     { id: 2, name: 'Vegetable', color: 'green', selected: false },
     { id: 3, name: 'Fruit', color: '#4CAF50', selected: false },
     { id: 4, name: 'Dairy Products', color: 'lightblue', selected: false }
   ]);
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  useEffect(() => {
+    // Check if there is a stored phone number and populate the state
+    const getStoredPhoneNumber = async () => {
+      try {
+        const storedNumber = await AsyncStorage.getItem('phoneNumber');
+        if (storedNumber) {
+          setPhoneNumber(storedNumber);
+        }
+      } catch (error) {
+        console.error('Error retrieving phone number:', error);
+      }
+    };
+
+    getStoredPhoneNumber();
+  }, []);
   useEffect(() => {
     getProducts({});
+    fetchCartItems();
   }, [navigation]);
+  const fetchData = async () => {
+  
+  };
+  const fetchCartItems = async () => {
+    // Fetch cart items from storage or API
+    // For example, you can use AsyncStorage to get the cart items
+    const mobileNumber = '9477245638';
+    let completeObject = {
+      mobileNumber: phoneNumber,
+    };
+
+    try {
+      const response = await makeApiRequest(
+        'consumer/getUserProfile',
+        'POST',
+        completeObject,
+        state?.userData?.userData,
+      );
+
+      console.log(response);
+      let inputData = response?.payload?.cart;
+      const simplifiedList = Object.keys(inputData).map(key => ({
+        ...inputData[key],
+        id: inputData[key].productId,
+        name:
+          inputData[key].name.charAt(0).toUpperCase() +
+          inputData[key].name.slice(1),
+        price: parseFloat(inputData[key].price),
+        quantity: inputData[key].quantity,
+      }));
+      setCartItems(response?.payload?.cart);
+      console.log(simplifiedList);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+ 
+  };
+  const isProductInCart = (productId) => {
+    return cartItems[productId] !== undefined;
+  };
   const openDrawer = () => {
     navigation.dispatch(DrawerActions.openDrawer());
   };
   const adjustQuantity = (productId, change) => {
+    const inCart = isProductInCart(productId);
+    if (inCart) {
+      // Product is in the cart, navigate to the Cart screen
+      navigation.navigate('Cart');
+    } else {
     setProductQuantities({
       ...productQuantities,
       [productId]: (productQuantities[productId] || 0) + change,
@@ -67,7 +131,7 @@ const HomeScreen = ({ navigation, route }) => {
       
         let Body = {
           item: productDetails,
-          mobileNumber: '9477245638',
+          mobileNumber: phoneNumber,
         };
         makeApiRequest(
           'consumer/addItemToCart',
@@ -83,6 +147,11 @@ const HomeScreen = ({ navigation, route }) => {
         console.log(`Product with ID ${productId} not found.`);
       }
     }
+    setCartItems({
+      ...cartItems,
+      [productId]: true,
+    });
+  }
   };
   const onSelectCategory = async (item) => {
     console.log("is item selected ", item.selected)
@@ -148,7 +217,10 @@ const HomeScreen = ({ navigation, route }) => {
         <Text style={[styles1.productName, { color: "black" }]}>{item.name}</Text>
         <Text style={styles1.productPrice}>{`${item.pricePerUnit.toFixed(2)}rs per ${item.unit}`}</Text>
         <TouchableOpacity style={styles1.addButton} onPress={() =>   adjustQuantity(item.productId, 1)}>
-          <Text style={[styles1.addButtonText, { justifyContent: "center", alignContent: "center", alignItems: "center", alignSelf: "center" }]}>Add to Cart</Text>
+        <Text style={[styles1.addButtonText, { justifyContent: "center", alignContent: "center", alignItems: "center", alignSelf: "center" }]}>
+            {isProductInCart(item.productId) ? 'Go to Cart' : 'Add to Cart'}
+          </Text>
+          {/* <Text style={[styles1.addButtonText, { justifyContent: "center", alignContent: "center", alignItems: "center", alignSelf: "center" }]}>Add to Cart</Text> */}
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -202,7 +274,7 @@ const HomeScreen = ({ navigation, route }) => {
     return null;
   }
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <CustomHeader
         onSearch={handleSearch}
         onCart={() => navigation.navigate('Cart')}
@@ -225,6 +297,8 @@ const HomeScreen = ({ navigation, route }) => {
       <View>
         <Animated.View style={styles2.container}>
           <Text style={styles2.title}></Text>
+          <View style={{ flex: 1 }}>
+
           <FlatList
             data={categories}
             keyExtractor={(item) => item.id.toString()}
@@ -243,6 +317,7 @@ const HomeScreen = ({ navigation, route }) => {
               </TouchableOpacity>
             )}
           />
+          </View>
         </Animated.View>
         {/* <Text style={styles.title}></Text> */}
       </View>
@@ -259,6 +334,7 @@ const HomeScreen = ({ navigation, route }) => {
               No Products to show
             </Text>
           ) : (
+            <View style={{ flex: 1 }}>
             <FlatList 
               data={product}
               keyExtractor={(item) => item._id}
@@ -266,12 +342,13 @@ const HomeScreen = ({ navigation, route }) => {
               numColumns={numColumns}
               columnWrapperStyle={styles1.columnWrapper}
             />
+            </View>
           )}
 
         </View>
       )}
 
-    </ScrollView>
+    </View>
   );
 };
 

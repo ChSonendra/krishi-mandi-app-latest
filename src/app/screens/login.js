@@ -1,13 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import { View, Image, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { makeApiRequest } from '../services/api';
 import { Button } from 'react-native-paper';
 import { otpSecret } from '../configs/config.json'
 import {ToastAndroid} from 'react-native';
 import TextPin from '../components/ui/TextPin';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 function LoginScreen({ navigation }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
+  const storePhoneNumber = async (number) => {
+    try {
+      await AsyncStorage.setItem('phoneNumber', number);
+    } catch (error) {
+      console.error('Error storing phone number:', error);
+    }
+  };
+  useEffect(() => {
+    // Check if there is a stored phone number and populate the state
+    const getStoredPhoneNumber = async () => {
+      try {
+        const storedNumber = await AsyncStorage.getItem('phoneNumber');
+        if (storedNumber) {
+          setPhoneNumber(storedNumber);
+        }
+      } catch (error) {
+        console.error('Error retrieving phone number:', error);
+      }
+    };
+
+    getStoredPhoneNumber();
+  }, []);
   const handleLogin = async () => {
     setLoading(true);
     if (phoneNumber.trim() === '' || phoneNumber.length !== 10) {
@@ -25,6 +48,7 @@ function LoginScreen({ navigation }) {
             ToastAndroid.SHORT,
             ToastAndroid.BOTTOM,
           );
+          await storePhoneNumber(phoneNumber);
           navigation.navigate('Otp', { mobileNumber: phoneNumber });
         } else {
           ToastAndroid.showWithGravity(
@@ -90,7 +114,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   buttonContainer: {
-    marginTop: 100,
+    marginTop: 120,
     width: '100%',
   },
   loginButton: {

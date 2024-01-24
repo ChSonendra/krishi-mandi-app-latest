@@ -7,6 +7,7 @@ import { store } from '../redux/store';
 import { makeApiRequest } from '../services/api';
 import Icon from 'react-native-vector-icons/FontAwesome'; // You can choose any icon library you prefer
 import { white } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -14,13 +15,30 @@ const ProfileScreen = () => {
   const [address, setAddress] = useState([]);
   const [addressId, setAddressId] = useState([]);
 
-  const [email, setEmail] = useState('john.doe@example.com');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('555-1234');
   const state = store.getState()
+  const [phoneNumber, setPhoneNumber] = useState('');
+
+  useEffect(() => {
+    // Check if there is a stored phone number and populate the state
+    const getStoredPhoneNumber = async () => {
+      try {
+        const storedNumber = await AsyncStorage.getItem('phoneNumber');
+        if (storedNumber) {
+          setPhoneNumber(storedNumber);
+        }
+      } catch (error) {
+        console.error('Error retrieving phone number:', error);
+      }
+    };
+
+    getStoredPhoneNumber();
+  }, []);
   useEffect(() => {
     const mobileNumber = '9477245638';
     let completeObject = {
-      mobileNumber: mobileNumber,
+      mobileNumber: phoneNumber,
     };
     makeApiRequest(
       'consumer/getUserProfile',
@@ -45,7 +63,7 @@ const ProfileScreen = () => {
   const fetchData = () => {
     const mobileNumber = '9477245638';
     let completeObject = {
-      mobileNumber: mobileNumber,
+      mobileNumber:phoneNumber,
     };
     makeApiRequest(
       'consumer/getUserProfile',
@@ -91,7 +109,7 @@ const ProfileScreen = () => {
       Body,
       state?.userData?.userData,
     ).then(response => {
-      console.log(response.apiResponseData);
+      console.log(response);
 
 
     });
@@ -101,7 +119,7 @@ const ProfileScreen = () => {
       completeObject,
       state?.userData?.userData,
     ).then(response => {
-      console.log(response.apiResponseData);
+      console.log(response);
 
 
     });
@@ -150,7 +168,7 @@ const ProfileScreen = () => {
     return names.map((name) => name[0]).join('').toUpperCase();
   };
   const renderAddressCard = (address, index) => (
-    <Card key={id} style={styles.addressCard}>
+    <Card key={index} style={styles.addressCard}>
       <Card.Content>
         <Title>{address.address}</Title>
         <Paragraph>{address.street} {address.city}, {address.pin}</Paragraph>
@@ -166,7 +184,7 @@ const ProfileScreen = () => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleEditProfile} style={styles.editButtonContainer}>
-          <Title style={styles.editButtonText}>Edit</Title>
+     {email!==''&&  <Title style={styles.editButtonText}>Edit</Title>}
         </TouchableOpacity>
         <TouchableOpacity onPress={handleEditProfile}>
           <Avatar.Text style={styles.avatar} label={getInitials(name)} size={100} />
