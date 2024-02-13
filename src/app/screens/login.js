@@ -1,10 +1,11 @@
-import React, { useState ,useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Image, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { makeApiRequest } from '../services/api';
 import { Button } from 'react-native-paper';
 import { otpSecret } from '../configs/config.json'
-import {ToastAndroid} from 'react-native';
+import { ToastAndroid } from 'react-native';
 import TextPin from '../components/ui/TextPin';
+import * as config from "../configs/config.json"
 import AsyncStorage from '@react-native-async-storage/async-storage';
 function LoginScreen({ navigation }) {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -38,7 +39,8 @@ function LoginScreen({ navigation }) {
       setLoading(false); // Make sure to set loading to false here
     } else {
       try {
-        const result = await makeApiRequest('consumer/sendOtpMobile', 'POST', {
+        const result = await makeApiRequest('consumer/sendOtpMobile', 'POST',
+          config.serverNames.lightOne, {
           mobileNumber: phoneNumber,
           secretCode: otpSecret
         });
@@ -68,7 +70,7 @@ function LoginScreen({ navigation }) {
       }
     }
   };
-  
+
 
   return (
     <View style={styles.container}>
@@ -89,8 +91,8 @@ function LoginScreen({ navigation }) {
           onPress={handleLogin}
           disabled={loading}
         >
-          { loading ? (
-            <ActivityIndicator style={{color:"blue",justifyContent:"center",alignContent:"center",alignItems:"center",alignSelf:"center"}} />
+          {loading ? (
+            <ActivityIndicator style={{ color: "blue", justifyContent: "center", alignContent: "center", alignItems: "center", alignSelf: "center" }} />
           ) : (
             <Text style={styles.buttonText} onPress={handleLogin}>Login</Text>
           )}

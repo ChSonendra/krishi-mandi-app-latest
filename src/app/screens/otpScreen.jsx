@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, Image } from 'react-native';
 import { Button } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as config from "../configs/config.json"
 import {ToastAndroid} from 'react-native';
 import { makeApiRequest } from '../services/api';
 import { store } from '../redux/store';
@@ -23,7 +24,7 @@ function OTPScreen({ navigation, route }) {
         otp: parseInt(otp.join(""), 10),
       };
       console.log(Body);
-      const result = await makeApiRequest('consumer/verifyOtp', 'POST', Body);
+      const result = await makeApiRequest('consumer/verifyOtp', 'POST',config.serverNames.lightOne, Body);
       if(result.status){
         ToastAndroid.showWithGravity(
           "Otp Verified Successfully",

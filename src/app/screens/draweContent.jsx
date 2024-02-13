@@ -1,15 +1,16 @@
-import React, { useState,useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput, Modal, Text,Image,Platform} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, TextInput, Modal, Text, Image, Platform } from 'react-native';
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
-import { Avatar, Title, Caption, Drawer, TouchableRipple, Switch, IconButton,Button } from 'react-native-paper';
+import { Avatar, Title, Caption, Drawer, TouchableRipple, Switch, IconButton, Button } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { makeApiRequest } from '../services/api';
 import { store } from '../redux/store';
 import { CLEARSTORE } from '../redux/Actions/actionLogout';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as config from '../configs/config.json'
 const CustomDrawerContent = (props) => {
   const { navigation } = props;
-  const state=store.getState()
+  const state = store.getState()
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('Your Name');
   const [email, setEmail] = useState('YourEmail@example.com');
@@ -31,25 +32,26 @@ const CustomDrawerContent = (props) => {
 
     getStoredPhoneNumber();
   }, []);
-useEffect(() => {
-  const mobileNumber = '9477245638';
-  let completeObject = {
-    mobileNumber: phoneNumber,
-  };
-  makeApiRequest(
-    'consumer/getUserProfile',
-    'POST',
-    completeObject,
-    state?.userData?.userData
-  ).then(response => {
-    console.log(response);
-    // if (response.apiResponseData.status === 'success') {
+  useEffect(() => {
+    const mobileNumber = '9477245638';
+    let completeObject = {
+      mobileNumber: phoneNumber,
+    };
+    makeApiRequest(
+      'consumer/getUserProfile',
+      'POST',
+      config.serverNames.lightOne,
+      completeObject,
+      state?.userData?.userData
+    ).then(response => {
+      console.log(response);
+      // if (response.apiResponseData.status === 'success') {
       setName(response?.payload.name);
       setEmail(response?.payload.email);
-    // }
-  
-  })
-}, [])
+      // }
+
+    })
+  }, [])
 
   const toggleEditing = () => {
     setIsEditing(!isEditing);
@@ -78,38 +80,32 @@ useEffect(() => {
       <DrawerContentScrollView {...props}>
         {/* Custom Header */}
         <View style={styles.drawerHeader}>
-        <Image
-        source={{ uri: 'https://media.licdn.com/dms/image/D4D0BAQEAH5W3chL_Mg/company-logo_200_200/0/1687524964804?e=2147483647&v=beta&t=KUIE8QJh3Y8Z-x4JW7U4shwdP-mzQNuHbCf6gc_INao' }}
-        style={styles.banner}
-      />
-          <TouchableOpacity onPress={openEditModal}>
-            <Avatar.Image
-              style={{ backgroundColor: 'grey' }}
-              source={{
-                uri: 'https://example.com/avatar.jpg',
-              }}
-              size={50}
-            />
-          </TouchableOpacity>
+          <Image
+            source={{ uri: 'https://media.licdn.com/dms/image/D4D0BAQEAH5W3chL_Mg/company-logo_200_200/0/1687524964804?e=2147483647&v=beta&t=KUIE8QJh3Y8Z-x4JW7U4shwdP-mzQNuHbCf6gc_INao' }}
+            style={styles.banner}
+          />
+
+          <Avatar.Image
+            style={{ backgroundColor: 'grey' }}
+            source={{
+              uri: 'https://example.com/avatar.jpg',
+            }}
+            size={50}
+          />
           <View style={styles.headerText}>
-            <Title style={styles.titleText} numberOfLines={1} ellipsizeMode="tail" onPress={openEditModal}>
+            <Title style={styles.titleText} numberOfLines={1} ellipsizeMode="tail">
               {isEditing ? (
-                <TextInput
-                  style={styles.editableText}
-                  value={name}
-                  onChangeText={(text) => setName(text)}
-                />
+                <Text
+                  style={styles.editableText}>a humans</Text>
               ) : (
                 name
               )}
             </Title>
-            <Caption style={styles.captionText} numberOfLines={1} ellipsizeMode="tail" onPress={openEditModal}>
+            <Caption style={styles.captionText} numberOfLines={1} ellipsizeMode="tail">
               {isEditing ? (
-                <TextInput
+                <Text
                   style={styles.editableText}
-                  value={email}
-                  onChangeText={(text) => setEmail(text)}
-                />
+                >np email provided yet</Text>
               ) : (
                 email
               )}
@@ -136,7 +132,7 @@ useEffect(() => {
 
         {/* Custom Section */}
         <Drawer.Section title="Preferences" style={styles.drawerSection}>
-          <TouchableRipple onPress={() => {}}>
+          <TouchableRipple onPress={() => { }}>
             <View style={styles.preference}>
               <Text>Dark Theme</Text>
               <Switch value={false} color="lightgreen" />
@@ -150,8 +146,9 @@ useEffect(() => {
         <DrawerItem
           icon={({ color, size }) => <Icon name="exit-to-app" color={color} size={size} />}
           label="Sign Out"
-          onPress={() => {     store.dispatch(CLEARSTORE())
-        }}
+          onPress={() => {
+            store.dispatch(CLEARSTORE())
+          }}
           style={styles.drawerItem}
         />
       </Drawer.Section>
@@ -176,9 +173,9 @@ useEffect(() => {
               onChangeText={(text) => setEmail(text)}
               placeholder="Enter your email"
             />
-               <Button icon="pencil" mode="outlined"  onPress={saveChanges} style={styles.addButton}>
-          Edit
-        </Button>
+            <Button icon="pencil" mode="outlined" onPress={saveChanges} style={styles.addButton}>
+              Edit
+            </Button>
             {/* <TouchableOpacity onPress={saveChanges} style={styles.saveButton}>
               <Text style={styles.saveButtonText}>Save Cha</Text>
             </TouchableOpacity> */}
@@ -211,7 +208,7 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   captionText: {
-    fontSize: 14,
+    fontSize: 12,
     color: 'grey',
   },
   closeButton: {

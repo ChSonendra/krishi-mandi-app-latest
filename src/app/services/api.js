@@ -1,7 +1,9 @@
-import baseUrl from "../../utils/environment/Environment";
+// import baseUrl from "../../utils/environment/Environment";
 import axios from "axios";
-export const makeApiRequest = async (functionName, method, Body = null, authToken = null) => {
+import * as config from '../configs/config.json'
+export const makeApiRequest = async (functionName, method, serverName, Body = null, authToken = null) => {
   try {
+    const baseUrl = config.servers[serverName];
     const apiUrl = `${baseUrl}${functionName}`;
     const headers = {
       'Content-Type': 'application/json',
@@ -15,16 +17,16 @@ export const makeApiRequest = async (functionName, method, Body = null, authToke
       if (Body !== null) {
         const body = JSON.stringify(Body);
         const result = await axios.post(apiUrl, body, { headers: headers })
-        console.log(result);
+        console.log("result ====================================",functionName,"",result.data.apiResponseStatus);
         if (result.data.apiResponseStatus) {
           return {
             status: true,
             payload: result.data.apiResponseData
           }
         }
-        else if (result.data.apiResponseStatus == false) {
+        else if (!result.data.apiResponseStatus) {
           return {
-            status: true,
+            status: false,
             message: result.data.apiResponseData.apiResponseMessage
           }
         }
@@ -47,9 +49,9 @@ export const makeApiRequest = async (functionName, method, Body = null, authToke
           payload: result.data.apiResponseData
         }
       }
-      else if (result.data.apiResponseStatus == false) {
+      else if (!result.data.apiResponseStatus) {
         return {
-          status: true,
+          status: false,
           message: result.data.apiResponseData.apiResponseMessage
         }
       }
@@ -61,7 +63,7 @@ export const makeApiRequest = async (functionName, method, Body = null, authToke
       }
     }
   }
-  catch(error){
+  catch (error) {
     return {
       status: false,
       message: "Some error Occured please try opening the app later"

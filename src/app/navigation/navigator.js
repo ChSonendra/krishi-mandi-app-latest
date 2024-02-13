@@ -22,37 +22,37 @@ import AddAddressScreen from '../screens/addAddress';
 import ProductDetails from '../screens/productDetails';
 import FarmerStack from './drawerNavigator';
 import OrderConfirmedScreen from '../screens/orders';
-
+import Payment from '../pages/Home'
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
-const state=store.getState()
+const state = store.getState()
 console.log(state?.userData?.userData);
-  const isLoggedIn = state?.userData?.userData?true:false; 
+const isLoggedIn = state?.userData?.userData ? true : false;
 const AuthStack = () => (
-  
-      <Stack.Navigator initialRouteName="Splash"  screenOptions={{
-        headerShown: false, 
-      }}>
-         <Stack.Screen name="Splash" component={SplashScreen} />
-         <Stack.Screen name="Main" component={MainScreen} />
-         <Stack.Screen name="Login" component={LoginScreen} />
-         <Stack.Screen name="Otp" component={OTPScreen} />
-         <Stack.Screen
-        name="MainNavigator"
-        component={MainNavigator}
-      />
-         <Stack.Screen
-        name="FarmerScreen"
-        component={FarmerStack}
-      />
+
+  <Stack.Navigator initialRouteName="Splash" screenOptions={{
+    headerShown: false,
+  }}>
+    <Stack.Screen name="Splash" component={SplashScreen} />
+    <Stack.Screen name="Main" component={MainScreen} />
+    <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="Otp" component={OTPScreen} />
+    <Stack.Screen
+      name="MainNavigator"
+      component={MainNavigator}
+    />
+    <Stack.Screen
+      name="FarmerScreen"
+      component={FarmerStack}
+    />
 
   </Stack.Navigator>
 );
 
 const HomeTabs = () => (
-    <Stack.Navigator>
+  <Stack.Navigator>
     <Stack.Screen
       name="HomeScreen"
       component={HomeScreen}
@@ -60,18 +60,18 @@ const HomeTabs = () => (
         tabBarIcon: ({ color, size }) => (
           <Icon name="home" color="green" size={size} />
         ),
-             headerShown:false,
+        headerShown: false,
       }}
     />
-  
-        <Stack.Screen
+
+    <Stack.Screen
       name="Account"
       component={ProfileScreen}
       options={{
         tabBarIcon: ({ color, size }) => (
           <Icon name="user" color="green" size={size} />
         ),
-        headerShown:false,
+        headerShown: false,
       }}
     />
     {/* Add more tab screens as needed */}
@@ -80,18 +80,19 @@ const HomeTabs = () => (
 
 const MainNavigator = () => (
   <Drawer.Navigator
-  drawerContent={(props) => <CustomDrawerContent {...props} />} // Pass your custom drawer content component here
-  screenOptions={{
-    headerShown: false,
-  }}
->
+    drawerContent={(props) => <CustomDrawerContent {...props} />} // Pass your custom drawer content component here
+    screenOptions={{
+      headerShown: false,
+    }}
+  >
     <Drawer.Screen name="Home" component={HomeTabs} />
     <Drawer.Screen name="Cart" component={CartScreen} />
     <Drawer.Screen name="EditProfile" component={EditProfileScreen} />
 
-      <Drawer.Screen name="Profile" component={ProfileScreen} />
+    <Drawer.Screen name="Profile" component={ProfileScreen} />
     <Drawer.Screen name="Address" component={AddAddressScreen} />
     <Drawer.Screen name="Settings" component={ProductListingPage} />
+    <Drawer.Screen name="PaymentScreen" component={Payment} />
     <Drawer.Screen name="Product" component={ProductDetails} />
     <Drawer.Screen name="Orders" component={OrderConfirmedScreen} />
 

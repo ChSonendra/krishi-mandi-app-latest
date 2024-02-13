@@ -22,6 +22,7 @@ import ProductListingPage from './products';
 import Swiper from 'react-native-swiper';
 import Carousel from 'react-native-snap-carousel';
 import { ScrollView } from 'react-native-gesture-handler';
+import * as config from '../configs/config.json'
 const windowHeight = Dimensions.get('window').height;
 const isLoaded = false;
 const HomeScreen = ({ navigation, route }) => {
@@ -58,7 +59,12 @@ const HomeScreen = ({ navigation, route }) => {
     getStoredPhoneNumber();
   }, []);
   useEffect(() => {
-    getProducts({});
+    getProducts({
+        name: "",
+        category :"" ,
+        page: 1,
+        limit: 20
+    });
     fetchCartItems();
   }, [navigation]);
   const fetchData = async () => {
@@ -76,6 +82,7 @@ const HomeScreen = ({ navigation, route }) => {
       const response = await makeApiRequest(
         'consumer/getUserProfile',
         'POST',
+        config.serverNames.lightOne,
         completeObject,
         state?.userData?.userData,
       );
@@ -136,6 +143,7 @@ const HomeScreen = ({ navigation, route }) => {
         makeApiRequest(
           'consumer/addItemToCart',
           'POST',
+          config.serverNames.lightOne,
           Body,
           state?.userData?.userData,
         ).then(response => {
@@ -196,7 +204,7 @@ const HomeScreen = ({ navigation, route }) => {
   }
   const getProducts = async (bodyData) => {
     let token = await AsyncStorage.getItem('token');
-    const result = await makeApiRequest('consumer/getProducts', 'POST', bodyData, token)
+    const result = await makeApiRequest('consumer/getProducts', 'POST', config.serverNames.lightOne, bodyData, token)
     if (result.status) {
       console.log("size of products for bodydata", bodyData, " size ", result.payload.length)
       setProduct(result?.payload)

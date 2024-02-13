@@ -1,3 +1,18 @@
 {
-    "otpSecret":"3bc9914586ddf6fb771"
+    "otpSecret":"3bc9914586ddf6fb771",
+    "servers": {
+        "lightOne":"http://43.204.188.100:3001/",
+        "heavyOne":"http://43.204.188.100:3001/"
+    },
+    "serverNames": {
+        "lightOne":"lightOne",
+        "heavyOne":"heavyOne"
+    },
+    "paymentconfig": {
+        "merchantId": "M226FOLA5BC20",
+        "apiKey": "adb3e87b-0ae0-4602-94b9-c3e848844b3d"
+    },
+    "secrets": {
+        "orderFrontendSecret": "893y4d3ufrejfbcgertg8y8hfre8fw9ejfhrrgvfhbjvbd"
+    }
 }

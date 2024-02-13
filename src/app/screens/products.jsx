@@ -12,6 +12,7 @@ import {
 import {Card, IconButton, Button} from 'react-native-paper';
 import CustomHeader from './customHeader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as config from "../configs/config.json"
 import {makeApiRequest} from '../services/api';
 import {store} from '../redux/store';
 import {DrawerActions} from '@react-navigation/native';
@@ -40,6 +41,7 @@ const ProductListingPage = (props) => {
     makeApiRequest(
       'consumer/getProducts',
       'POST',
+      config.serverNames.lightOne,
       {},
       state?.userData?.userData,
     ).then(response => {
@@ -74,6 +76,7 @@ const ProductListingPage = (props) => {
         makeApiRequest(
           'consumer/addItemToCart',
           'POST',
+          config.serverNames.lightOne,
           Body,
           state?.userData?.userData,
         ).then(response => {

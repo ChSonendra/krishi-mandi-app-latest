@@ -6,20 +6,24 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  SafeAreaView,
   Button,
+  ScrollView,
   TouchableHighlight,
 } from 'react-native';
+import * as config from "../configs/config.json"
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import MapView, { Marker } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/FontAwesome'; // You can choose any icon library you prefer
 import { store } from '../redux/store';
 import { makeApiRequest } from '../services/api';
-import { v4 as uuidv4 } from 'uuid';
 import { useFocusEffect } from '@react-navigation/native';
-import { ToastAndroid } from 'react-native';
-import * as config from '../configs/config.json'
 import RazorpayCheckout from 'react-native-razorpay';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import PPButton from "../pages/Container/PPButton";
+import PPTextField from "../pages/Container/PPTextField";
+import { style } from "../pages/stylesheets/Style"
+
 import {
   Modal,
   List,
@@ -28,98 +32,33 @@ import {
   ActivityIndicator,
 } from 'react-native-paper';
 import LottieView from 'lottie-react-native';
+import CartHeader from './cartHeader';
 const CartScreen = ({ navigation }) => {
   const state = store.getState();
+
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [visible, setVisible] = useState(false);
   const [cartData, setCartData] = useState([]);
   const [cartAddress, setCartAddress] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [totalPrice, setTotalPrice] = useState(0)
-  const [userId, setUserId] = useState("")
   const [apiLoading, setApiLoading] = useState(false)
-  const [createOrderVisible, setCreateOrderVisible] = useState(false)
-  const [receiveOrderText, setReceiveOrderText] = useState("")
-
-  const showCreateOrderModel = () => setCreateOrderVisible(true);
-  const hideCreateOrderModel = () => setCreateOrderVisible(false);
+  const [creatingOrderisible, setcreatingOrderisible] = useState(false)
 
 
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
 
-  const handleAddressSelection = address => {
+  const showCreatingOrderModal = () => setcreatingOrderisible(true)
+  const hideCreatingOrderModal = () => setcreatingOrderisible(false)
+
+  const showApiRequestModal = () => setApiLoading(true)
+  const hideApiResponseModal = () => setApiLoading(false)
+
+  const handleAddressSelection = async (address) => {
     setSelectedAddress(address);
     hideModal();
   };
-  const handleAddressSelected = item => {
-    console.log("item --- ", item)
-    // Handle actions after the address is selected
-
-    // You can perform additional actions here if needed
-    setSelectedAddress(item);
-    hideModal();
-    showCreateOrderModel();
-    setApiLoading(true)
-    createApiCall(item);
-  };
-
-  const createApiCall = async (item) => {
-    try {
-      const productList = await listProductsFroApi();
-      console.log("address === ", item)
-      const bodyData = {
-        userId: userId,
-        productIdsAndQuantities: productList,
-        totalAmountInRuppes: totalPrice,
-        address: {
-          addressId: "ygffkjvdv",
-          address: item.address,
-          city: item.city,
-          pin: item.pin,
-          street: item.street
-        },
-        orderSecretCode: config.secrets.orderFrontendSecret
-      }
-      console.log("bodyData === ", bodyData)
-      const responseData = await makeApiRequest("consumer/receiveOrder", "POST", config.serverNames.heavyOne, bodyData, state?.userData?.userData);
-      if (responseData.status) {
-        console.log("here 1")
-        ToastAndroid.showWithGravity(
-          "order created successfully, please complete the paument now",
-          ToastAndroid.SHORT,
-          ToastAndroid.BOTTOM,
-        );
-        setReceiveOrderText("order created successfully, please complete the paument now, navigating to payment page")
-        console.log("here 2")
-        console.log("here 3")
-        console.log("here 4")
-        setApiLoading(false)
-        console.log("here 5")
-
-        console.log("here 6")
-
-        setTimeout(() => {
-          console.log("done 78",responseData.payload)
-          hideCreateOrderModel()
-          navigation.navigate('PaymentScreen', {order : responseData.payload});
-        }, 2000);
-      }
-      else {
-        ToastAndroid.showWithGravity(
-          responseData.message,
-          ToastAndroid.SHORT,
-          ToastAndroid.BOTTOM,
-        );
-        setReceiveOrderText(responseData.message);
-        setApiLoading(false)
-      }
-    }
-    catch (error) {
-      console.log("error from catch", error)
-    }
-  }
 
   const listProductsFroApi = async () => {
     let proQuan = []
@@ -132,26 +71,40 @@ const CartScreen = ({ navigation }) => {
     }
     return proQuan;
   }
-  const renderOrderCreatingModal = () => {
-    return (
-      <Portal>
-        <Modal
-          visible={createOrderVisible}
-          onDismiss={hideCreateOrderModel}
-          contentContainerStyle={styles.addressSelectorContainer}>
-          <Text style={styles.addressLabel}>Creating Order</Text>
-          {apiLoading ? (
-            <ActivityIndicator />
-          ) : (
-            <View><Text>{receiveOrderText}</Text>
-            </View>
-          )}
-          <TouchableOpacity onPress={hideCreateOrderModel} style={styles.cancelButton}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </Modal>
-      </Portal>
+  const handleAddressSelected = async (item) => {
+    // Handle actions after the address is selected
+    console.log('Address selected:', selectedAddress);
+    // You can perform additional actions here if needed
+    setSelectedAddress(item);
+    hideModal();
+    setApiLoading(true)
+    showCreatingOrderModal();
+    const response = await makeApiRequest(
+      'consumer/getUserProfile',
+      'POST',
+      config.serverNames.lightOne,
+      completeObject,
+      state?.userData?.userData
     );
+    const listProductandQuantites = await listProductsFroApi();
+    const TotalPrice = await calculateTotal()
+    const bodyData = {
+      userId: response.payload.userId,
+      addresses: {
+        addressId: "greatId",
+        address: cartAddress.address,
+        city: cartAddress.city,
+        pin: cartAddress.pin,
+        street: cartAddress.street,
+      },
+      orderSecretCode: config.secrets.orderFrontendSecret,
+      totalAmountInRuppes: TotalPrice,
+      productIdsAndQuantities: listProductandQuantites
+    }
+    console.log("body data ================================== 888888888888888888888 ++++++++++++ ", JSON.stringify(bodyData))
+    await makeApiRequest("consumer/receiveOrder", "POST", config.serverNames.heavyOne, bodyData, state?.userData?.userData)
+    setApiLoading(false)
+
   };
   const renderAddressSelectorModal = () => {
     return (
@@ -163,7 +116,7 @@ const CartScreen = ({ navigation }) => {
           <Text style={styles.addressLabel}>Select Delivery Address</Text>
           <FlatList
             data={cartAddress}
-            keyExtractor={item => item.addressId}
+            keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.addressItem}
@@ -186,6 +139,22 @@ const CartScreen = ({ navigation }) => {
             )}
           />
           <TouchableOpacity onPress={hideModal} style={styles.cancelButton}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </Modal>
+      </Portal>
+    );
+  };
+
+  const renderOrderCreatingModal = () => {
+    return (
+      <Portal>
+        <Modal
+          visible={creatingOrderisible}
+          onDismiss={hideCreatingOrderModal}
+          contentContainerStyle={styles.addressSelectorContainer}>
+          <Text style={styles.addressLabel}>Creating Order</Text>
+          <TouchableOpacity onPress={hideCreatingOrderModal} style={styles.cancelButton}>
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </Modal>
@@ -236,33 +205,12 @@ const CartScreen = ({ navigation }) => {
             quantity: inputData[key].quantity,
           }));
           const addressesArray = Object.values(response?.payload?.addresses);
-          let newAddressArray = []
-          for (var i = 0; i < addressesArray.length; i++) {
-            console.log("inside loop");
-            const randomNumber = (i * 3) + 1
-            const uniqueId = randomNumber.toString()
-
-            console.log("inside loop === ", uniqueId);
-            const newItem = {
-              addressId: uniqueId,
-              address: addressesArray[i].address,
-              street: addressesArray[i].street,
-              pin: addressesArray[i].pin,
-              city: addressesArray[i].city
-            }
-            console.log("inside loop === new item ", newItem);
-            newAddressArray.push(newItem)
-          }
-          setUserId(response?.payload?.userId)
-          console.log("Cart data =========+++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ", addressesArray)
-          console.log("Cart data =========+++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ", newAddressArray)
           setCartData(simplifiedList);
-          setCartAddress(newAddressArray);
-          const totalPrice = await calculateTotal();
-          setTotalPrice(totalPrice);
-          setLoading(false);
+          setCartAddress(addressesArray);
         } catch (error) {
           console.error('Error fetching data:', error);
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -270,6 +218,7 @@ const CartScreen = ({ navigation }) => {
     }, [state?.userData?.userData]),
   );
 
+  console.log("cart data =======+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ ", cartData)
   const calculateTotal = async () => {
     return cartData?.reduce(
       (total, item) =>
@@ -383,7 +332,7 @@ const CartScreen = ({ navigation }) => {
     );
   };
   const renderItem = ({ item }) => (
-    <View key={item.productId} style={styles.card}>
+    <View style={styles.card}>
       {item?.images ? (
         <Image
           style={styles.itemImage}
@@ -418,14 +367,17 @@ const CartScreen = ({ navigation }) => {
   );
 
 
-
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Icon name="arrow-left" size={20} color="#333" />
-      </TouchableOpacity>
-
-      <Text style={styles.title}> Cart</Text>
+      {/* <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Icon name="arrow-left" size={20} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Items in Cart</Text>
+      </View> */}
+      <View>
+        <CartHeader />
+      </View>
 
       {loading ? (
         <ActivityIndicator
@@ -435,17 +387,21 @@ const CartScreen = ({ navigation }) => {
         />
       ) : (
         <>
+
           {cartData?.length !== 0 ? (
-            <FlatList
-              data={cartData}
-              keyExtractor={item => item.productId}
-              renderItem={renderItem}
-              style={styles.flatList}
-            />
+            <View style={{ padding: 10 }}>
+              <FlatList
+                data={cartData}
+                keyExtractor={item => item.productId}
+                renderItem={renderItem}
+                style={styles.flatList}
+              />
+            </View>
           ) : (
             <View
               style={{
                 flex: 0.5,
+                padding: 10,
                 justifyContent: 'center',
                 alignItems: 'center',
               }}>
@@ -461,42 +417,46 @@ const CartScreen = ({ navigation }) => {
               />
             </View>
           )}
+          <View style={{ paddingRight: 16, paddingLeft: 16 }}>
+            <View style={styles.billContainer}>
+              <Text style={styles.billLabel}>Bill Details</Text>
+              <Text>Total Items: {cartData?.length}</Text>
+              <Text>Total Amount: ₹{calculateTotal()}</Text>
+            </View>
 
-          <View style={styles.billContainer}>
-            <Text style={styles.billLabel}>Bill Details</Text>
-            <Text>Total Items: {cartData?.length}</Text>
-            <Text>Total Amount: ₹{totalPrice}</Text>
+            <TouchableOpacity
+              style={styles.checkoutButton}
+              onPress={() => {
+                showModal();
+              }}>
+              <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.checkoutButton}
-            onPress={() => {
-              showModal();
-            }}>
-            <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
-          </TouchableOpacity>
-
           {renderAddressSelectorModal()}
-          {renderOrderCreatingModal()}
         </>
       )}
     </View>
   );
 };
 
+
+
+
+
 const styles = StyleSheet.create({
-  backButton: {
-    position: 'absolute',
-    top: 22,
-    left: 15,
-    zIndex: 1,
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   loadingIndicator: {
     marginTop: 20,
   },
   container: {
     flex: 1,
-    padding: 16,
+    paddingBottom: 16,
     backgroundColor: '#fff', // White background
   },
   title: {
@@ -511,7 +471,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', // White background
     borderRadius: 12,
     padding: 12,
-    marginBottom: 12,
+    marginLeft: 10,
+    marginRight: 10,
+    marginBottom: 10,
     elevation: 3,
   },
   itemImage: {
@@ -608,8 +570,6 @@ const styles = StyleSheet.create({
   addressSelectorContainer: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    marginLeft: 30,
-    marginRight: 30,
     padding: 16,
   },
   addressLabel: {

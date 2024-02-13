@@ -8,6 +8,7 @@ import { makeApiRequest } from '../services/api';
 import Icon from 'react-native-vector-icons/FontAwesome'; // You can choose any icon library you prefer
 import { white } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as config from "../configs/config.json"
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -43,10 +44,11 @@ const ProfileScreen = () => {
     makeApiRequest(
       'consumer/getUserProfile',
       'POST',
+      config.serverNames.lightOne,
       completeObject,
       state?.userData?.userData
     ).then(response => {
-      console.log(response);
+      console.log("great response ===============================================================================================",response.payload.address);
       // if (response.apiResponseData.status === 'success') {
       setName(response?.payload?.name);
       setEmail(response.payload.email);
@@ -68,6 +70,7 @@ setLoading(false)
     makeApiRequest(
       'consumer/getUserProfile',
       'POST',
+      config.serverNames.lightOne,
       completeObject,
       state?.userData?.userData
     ).then(response => {
@@ -95,7 +98,7 @@ setLoading(false)
     });
   };
 
-  const handleSaveChanges = (newName, newEmail, newPhone) => {
+  const handleSaveChanges = async (newName, newEmail, newPhone) => {
     setName(newName);
     setEmail(newEmail);
     setPhone(newPhone);
@@ -105,9 +108,10 @@ setLoading(false)
     let Body = {
       email: newEmail
     };
-    makeApiRequest(
+    await makeApiRequest(
       'consumer/setEmail',
       'POST',
+      config.serverNames.lightOne,
       Body,
       state?.userData?.userData,
     ).then(response => {
@@ -115,9 +119,10 @@ setLoading(false)
 
 
     });
-    makeApiRequest(
+    await makeApiRequest(
       'consumer/setName',
       'POST',
+      config.serverNames.lightOne,
       completeObject,
       state?.userData?.userData,
     ).then(response => {
@@ -134,6 +139,7 @@ setLoading(false)
     makeApiRequest(
       'consumer/removeAddress',
       'POST',
+      config.serverNames.lightOne,
       Body,
       state?.userData?.userData,
     ).then(response => {
@@ -156,6 +162,7 @@ setLoading(false)
     makeApiRequest(
       'consumer/addAddress',
       'POST',
+      config.serverNames.lightOne,
       Body,
       state?.userData?.userData,
     ).then(response => {
